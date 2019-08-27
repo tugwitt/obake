@@ -155,6 +155,9 @@ if(PIRANHA_WITH_TBB)
     find_package(TBB REQUIRED)
 endif()
 
+# fmt.
+find_package(fmt 6 REQUIRED)
+
 # Depend on DbgEng on MSVC, for the stack trace support.
 if(YACMA_COMPILER_IS_MSVC)
     find_package(DbgEng REQUIRED)
@@ -216,6 +219,9 @@ endif()
 if(YACMA_COMPILER_IS_MSVC)
     target_link_libraries(piranha PUBLIC DbgEng::DbgEng)
 endif()
+
+# fmt.
+target_link_libraries(piranha PUBLIC fmt::fmt)
 
 # Configure config.hpp.
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/config.hpp.in" "${CMAKE_CURRENT_BINARY_DIR}/include/piranha/config.hpp" @ONLY)

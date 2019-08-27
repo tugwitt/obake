@@ -17,6 +17,7 @@
 
 #include <piranha/config.hpp>
 #include <piranha/detail/carray.hpp>
+#include <piranha/detail/fmt.hpp>
 #include <piranha/detail/limits.hpp>
 #include <piranha/detail/to_string.hpp>
 #include <piranha/detail/xoroshiro128_plus.hpp>
@@ -407,11 +408,11 @@ public:
         if (size) {
             // Get the delta bit width corresponding to the input size.
             if (piranha_unlikely(size > detail::k_packing_get_max_size<T>())) {
-                piranha_throw(::std::overflow_error,
-                              "Invalid size specified in the constructor of a Kronecker packer for the type '"
-                                  + ::piranha::type_name<T>() + "': the maximum possible size is "
-                                  + detail::to_string(detail::k_packing_get_max_size<T>()) + ", but a size of "
-                                  + detail::to_string(size) + " was specified instead");
+                piranha_throw(
+                    ::std::overflow_error,
+                    ::fmt::format("Invalid size specified in the constructor of a Kronecker packer for the type '{}': "
+                                  "the maximum possible size is {}, but a size of {} was specified instead",
+                                  ::piranha::type_name<T>(), detail::k_packing_get_max_size<T>(), size));
             }
             m_nbits = detail::k_packing_size_to_bits<T>(size);
         }

@@ -7,22 +7,87 @@
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include <algorithm>
+#include <atomic>
 #include <cassert>
+#include <cstddef>
+#include <functional>
 #include <initializer_list>
 #include <stdexcept>
 #include <string>
 #include <tuple>
+#include <unordered_set>
 #include <utility>
 
 #include <boost/container/container_fwd.hpp>
 
+#include <obake/detail/atomic_lock_guard.hpp>
 #include <obake/detail/limits.hpp>
 #include <obake/detail/to_string.hpp>
 #include <obake/exceptions.hpp>
 #include <obake/math/safe_cast.hpp>
 #include <obake/symbols.hpp>
 
-namespace obake::detail
+namespace obake
+{
+
+namespace detail
+{
+
+namespace
+{
+
+struct ss_fw_hasher {
+    ::std::size_t operator()(const symbol_set::container_t &ss) const
+    {
+        ::std::size_t retval = 0;
+        for (const auto &s : ss) {
+            retval += ::std::hash<::std::string>{}(s);
+        }
+        return retval;
+    }
+};
+
+using ss_fw_set_t = ::std::unordered_set<symbol_set::container_t, ss_fw_hasher>;
+
+ss_fw_set_t &ss_fw_get_set()
+{
+    static ss_fw_set_t retval;
+    return retval;
+}
+
+::std::atomic_flag ss_fw_mutex = ATOMIC_FLAG_INIT;
+
+template <typename T>
+const symbol_set::container_t *ss_fw_lookup_impl(T &&ss)
+{
+    auto &ss_fw_set = detail::ss_fw_get_set();
+    atomic_lock_guard lock{ss_fw_mutex};
+    return &*ss_fw_set.insert(::std::forward<T>(ss)).first;
+}
+
+const symbol_set::container_t *ss_fw_lookup(const symbol_set::container_t &ss)
+{
+    return detail::ss_fw_lookup_impl(ss);
+}
+
+const symbol_set::container_t *ss_fw_lookup(symbol_set::container_t &&ss)
+{
+    return detail::ss_fw_lookup_impl(::std::move(ss));
+}
+
+} // namespace
+
+} // namespace detail
+
+symbol_set::symbol_set() : m_ptr(detail::ss_fw_lookup(container_t{})) {}
+
+symbol_set::symbol_set(const container_t &ss) : m_ptr(detail::ss_fw_lookup(ss)) {}
+
+symbol_set::symbol_set(container_t &&ss) : m_ptr(detail::ss_fw_lookup(::std::move(ss))) {}
+
+symbol_set::symbol_set(::std::initializer_list<::std::string> l) : symbol_set(container_t(l)) {}
+
+namespace detail
 {
 
 // Get a string representation of a symbol_set.
@@ -64,7 +129,7 @@ namespace obake::detail
     // Use the underlying sequence type
     // of symbol_set for the computation of the
     // union.
-    symbol_set::sequence_type seq;
+    symbol_set::container_t::sequence_type seq;
 
     // NOTE: the max size of the union is the sum of the two sizes, make sure
     // we can compute that safely.
@@ -85,8 +150,9 @@ namespace obake::detail
     seq.erase(u_end, seq.end());
 
     // Create the output set out of the union, knowing that it is ordered by construction.
-    symbol_set u_set;
-    u_set.adopt_sequence(::boost::container::ordered_unique_range_t{}, ::std::move(seq));
+    symbol_set::container_t u_set_container;
+    u_set_container.adopt_sequence(::boost::container::ordered_unique_range_t{}, ::std::move(seq));
+    symbol_set u_set(::std::move(u_set_container));
 
     // Small helper to compute the set difference between u_set
     // and the input symbol_set s.
@@ -105,7 +171,7 @@ namespace obake::detail
         // arithmetic.
         retval.reserve(static_cast<decltype(retval.size())>(s.size() + 1u));
 
-        auto u_it = u_set.cbegin();
+        auto u_it = u_set.begin();
         for (decltype(s.size()) i = 0; i < s.size(); ++i, ++u_it) {
             assert(u_it != u_set.end());
             const auto &cur_sym = *s.nth(i);
@@ -230,4 +296,6 @@ symbol_idx_set ss_intersect_idx(const symbol_set &s, const symbol_set &s_ref)
     return retval;
 }
 
-} // namespace obake::detail
+} // namespace detail
+
+} // namespace obake

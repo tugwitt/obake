@@ -1337,7 +1337,7 @@ public:
     void clear() noexcept
     {
         clear_terms();
-        m_symbol_set.clear();
+        m_symbol_set = symbol_set{};
     }
 
 private:
@@ -4386,7 +4386,7 @@ struct series_default_trim_impl {
         // and the trimmed symbol set.
         symbol_idx_set::sequence_type si_seq;
         si_seq.reserve(static_cast<decltype(si_seq.size())>(ss.size()));
-        symbol_set::sequence_type new_ss_seq;
+        symbol_set::container_t::sequence_type new_ss_seq;
         new_ss_seq.reserve(static_cast<decltype(new_ss_seq.size())>(ss.size()));
         for (symbol_idx i = 0; i < ss.size(); ++i) {
             if (trim_v[i] != 0) {
@@ -4397,8 +4397,9 @@ struct series_default_trim_impl {
         }
         symbol_idx_set si;
         si.adopt_sequence(::boost::container::ordered_unique_range_t{}, ::std::move(si_seq));
-        symbol_set new_ss;
-        new_ss.adopt_sequence(::boost::container::ordered_unique_range_t{}, ::std::move(new_ss_seq));
+        symbol_set::container_t new_ss_container;
+        new_ss_container.adopt_sequence(::boost::container::ordered_unique_range_t{}, ::std::move(new_ss_seq));
+        symbol_set new_ss(::std::move(new_ss_container));
 
         // Prepare the return value.
         ret_t<T &&> retval;

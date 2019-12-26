@@ -11,6 +11,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <memory>
 #include <string>
 #include <tuple>
 #include <utility>
@@ -29,7 +30,70 @@ namespace obake
 {
 
 // Set of symbols.
-using symbol_set = ::boost::container::flat_set<::std::string>;
+class OBAKE_DLL_PUBLIC symbol_set
+{
+    using container_t = ::boost::container::flat_set<::std::string>;
+    using size_type = container_t::size_type;
+    using iterator = container_t::const_iterator;
+
+    symbol_set();
+
+    symbol_set(const symbol_set &other) : m_ptr(other.m_ptr) {}
+    symbol_set(symbol_set &&other) noexcept : m_ptr(other.m_ptr) {}
+
+    explicit symbol_set(const container_t &);
+    explicit symbol_set(container_t &&);
+    explicit symbol_set(::std::initializer_list<::std::string>);
+
+    symbol_set &operator=(const symbol_set &other)
+    {
+        return m_ptr = other.m_ptr, *this;
+    }
+
+    symbol_set &operator=(symbol_set &&other) noexcept
+    {
+        return m_ptr = other.m_ptr, *this;
+    }
+
+    const container_t *ptr() const
+    {
+        return m_ptr;
+    }
+
+    size_type size() const
+    {
+        return m_ptr->size();
+    }
+    iterator begin() const
+    {
+        return m_ptr->begin();
+    }
+    iterator end() const
+    {
+        return m_ptr->end();
+    }
+    size_type index_of(iterator it) const
+    {
+        return m_ptr->index_of(it);
+    }
+    iterator nth(size_type n) const
+    {
+        return m_ptr->nth(n);
+    }
+
+private:
+    const container_t *m_ptr;
+};
+
+inline bool operator==(const symbol_set &s1, const symbol_set &s2)
+{
+    return s1.ptr() == s2.ptr();
+}
+
+inline bool operator!=(const symbol_set &s1, const symbol_set &s2)
+{
+    return s1.ptr() != s2.ptr();
+}
 
 // Unsigned integral type for indexing into a symbol_set.
 using symbol_idx = symbol_set::size_type;
@@ -164,9 +228,8 @@ inline void load(Archive &ar, ::obake::symbol_set &ss, unsigned)
     decltype(ss.size()) size;
     ar >> size;
 
-    // Extract the underlying sequence from ss
-    // and prepare its size.
-    auto seq(ss.extract_sequence());
+    // Prepare a new sequence for deserialization.
+    ::obake::symbol_set::container_t::sequence_type seq;
     seq.resize(size);
 
     // Fetch the symbol names from the archive.
@@ -174,8 +237,11 @@ inline void load(Archive &ar, ::obake::symbol_set &ss, unsigned)
         ar >> n;
     }
 
-    // Move the sequence back into ss.
-    ss.adopt_sequence(::boost::container::ordered_unique_range_t{}, ::std::move(seq));
+    // Create a new symbol set from the sequence
+    // and assign it to ss.
+    ::obake::symbol_set::container_t new_ss;
+    new_ss.adopt_sequence(::boost::container::ordered_unique_range_t{}, ::std::move(seq));
+    ss = ::obake::symbol_set(::std::move(new_ss));
 }
 
 // Disable tracking for symbol_set.

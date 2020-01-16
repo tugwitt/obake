@@ -211,7 +211,8 @@ inline ::std::array<T, sizeof...(Args)> make_polynomials_impl(const Args &... na
 
 } // namespace detail
 
-#if !defined(OBAKE_MSVC_SUPPORTED)
+#if defined(OBAKE_MSVC_LAMBDA_WORKAROUND)
+
 template <typename T>
 struct make_polynomials_msvc {
     template <typename... Args>
@@ -261,10 +262,14 @@ inline auto poly_mul_impl_par_make_idx_vector(const V &v)
 // data used during polynomial multiplication. In untruncated
 // multiplication, an empty tuple will be returned, otherwise
 // a tuple of 2 vectors containing the (partial) degrees of the terms
-// in the input series will be returned. The degrees
-// are computed using the facilities in series.hpp.
+// in the input series will be returned.
 // The input series are of types T and U, while the terms
 // of the series are stored in the input vectors v1 and v2.
+// It is expected that the term degrees are computed via
+// the facilities from series.hpp.
+// NOTE: this function does not do any degree computation,
+// it just prepares variables of the correct type to hold
+// the degrees.
 template <typename T, typename U, typename V1, typename V2, typename... Args>
 inline auto poly_mul_impl_prepare_degree_data([[maybe_unused]] const V1 &v1, [[maybe_unused]] const V2 &v2,
                                               [[maybe_unused]] const symbol_set &ss,
@@ -2219,7 +2224,7 @@ constexpr auto poly_subs_algorithm_impl()
                               // NOTE: verify the detection of subs_prod_t, as it is used
                               // in ret_t.
                               is_detected<::obake::detail::mul_t, key_subs_t, cf_subs_t>,
-                              is_compound_addable<::std::add_lvalue_reference_t<ret_t>, ret_t>,
+                              is_in_place_addable<::std::add_lvalue_reference_t<ret_t>, ret_t>,
                               ::std::is_constructible<cf_t, int>>) {
                 return ::std::make_pair(1, ::obake::detail::type_c<ret_t>{});
             } else {
@@ -2482,11 +2487,11 @@ constexpr auto poly_diff_algorithm_impl()
                                   is_detected<::obake::detail::mul_t, prod1_t, const rT &>,
                                   // The return type must be accumulable.
                                   // NOTE: this condition also checks that s_t is detected,
-                                  // as nonesuch is not compound addable.
-                                  is_compound_addable<::std::add_lvalue_reference_t<s_t>, s_t>,
+                                  // as nonesuch is not in-place addable.
+                                  is_in_place_addable<::std::add_lvalue_reference_t<s_t>, s_t>,
                                   // Need also to add in place with prod2_t in case
                                   // the differentiation variable is not in the polynomial.
-                                  is_compound_addable<::std::add_lvalue_reference_t<s_t>, prod2_t>,
+                                  is_in_place_addable<::std::add_lvalue_reference_t<s_t>, prod2_t>,
                                   // Need to init s_t to zero for accumulation.
                                   ::std::is_constructible<s_t, int>,
                                   // Need to construct cf_t from 1 for the temporary
@@ -2671,8 +2676,8 @@ constexpr auto poly_integrate_algorithm_impl()
                                   is_detected<::obake::detail::div_t, const cf_t &, key_int_t>,
                                   // The return type must be accumulable.
                                   // NOTE: this condition also checks that ret_t is detected,
-                                  // as nonesuch is not compound addable.
-                                  is_compound_addable<::std::add_lvalue_reference_t<ret_t>, ret_t>,
+                                  // as nonesuch is not in-place addable.
+                                  is_in_place_addable<::std::add_lvalue_reference_t<ret_t>, ret_t>,
                                   // Need to init ret_t to zero for accumulation.
                                   ::std::is_constructible<ret_t, int>,
                                   // Need to construct cf_t from 1 for the temporary

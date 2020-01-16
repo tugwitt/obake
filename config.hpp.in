@@ -14,6 +14,7 @@
 #define OBAKE_VERSION_STRING "@obake_VERSION@"
 #define OBAKE_VERSION_MAJOR @obake_VERSION_MAJOR@
 #define OBAKE_VERSION_MINOR @obake_VERSION_MINOR@
+#define OBAKE_VERSION_PATCH @obake_VERSION_PATCH@
 @OBAKE_ENABLE_LIBBACKTRACE@
 // clang-format on
 // End of defines instantiated by CMake.
@@ -88,12 +89,11 @@
 
 #endif
 
-// Temporary measure for MSVC versioning.
-// Language support is set to latest
-// on at least MSVC 16.4.0 preview 2.0.
-#if defined(_MSC_VER) && (_MSVC_LANG > 201703L) && (_MSC_FULL_VER > 192428206)
+// Detect older versions of MSVC which do
+// not like inline constexpr lambdas.
+#if defined(_MSC_VER) && ((_MSVC_LANG <= 201703L) || (_MSC_FULL_VER <= 192428206))
 
-#define OBAKE_MSVC_SUPPORTED
+#define OBAKE_MSVC_LAMBDA_WORKAROUND
 
 #endif
 

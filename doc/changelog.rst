@@ -1,7 +1,34 @@
 Changelog
 =========
 
-0.4.0 (unreleased)
+0.5.0 (unreleased)
+------------------
+
+New
+~~~
+
+- Parallelise the ``byte_size()`` implementation for series
+  types
+  (`#115 <https://github.com/bluescarni/obake/pull/115>`__).
+- obake's header files are now visible in the project
+  files created by the MSVC CMake generators
+  (`#112 <https://github.com/bluescarni/obake/pull/112>`__).
+
+Changes
+~~~~~~~
+
+- Various simplifications and improvements to the benchmarks
+  (`#114 <https://github.com/bluescarni/obake/pull/114>`__).
+- Update Catch to the latest version, 2.12.1
+  (`#114 <https://github.com/bluescarni/obake/pull/114>`__).
+
+Fix
+~~~
+
+- Fix build issues with recent CMake versions
+  (`#111 <https://github.com/bluescarni/obake/pull/111>`__).
+
+0.4.0 (12-02-2020)
 ------------------
 
 New
@@ -36,7 +63,7 @@ Fix
 ~~~
 
 - Fix a bug in the conversion operator for series
-  (`#98 <https://github.com/bluescarni/obake/pull/98>`__).
+  (`#99 <https://github.com/bluescarni/obake/pull/99>`__).
 - Fix an overflow detection bug in the dynamic packed
   monomial class
   (`#94 <https://github.com/bluescarni/obake/pull/94>`__).

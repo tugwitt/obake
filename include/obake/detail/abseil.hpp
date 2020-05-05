@@ -1,4 +1,4 @@
-// Copyright 2019 Francesco Biscani (bluescarni@gmail.com)
+// Copyright 2019-2020 Francesco Biscani (bluescarni@gmail.com)
 //
 // This file is part of the obake library.
 //
@@ -23,9 +23,10 @@
 
 #endif
 
+#include <absl/base/attributes.h>
 #include <absl/container/flat_hash_map.h>
 #include <absl/container/flat_hash_set.h>
-#include <absl/hash/hash.h>
+#include <absl/numeric/int128.h>
 
 #if defined(_MSC_VER) && !defined(__clang__)
 
